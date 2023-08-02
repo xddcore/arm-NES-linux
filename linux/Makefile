@@ -1,4 +1,4 @@
-CC = arm-linux-gcc
+CC = gcc #if you want compile on zero board
 TARBALL = InfoNES08J
 
 # InfoNES
