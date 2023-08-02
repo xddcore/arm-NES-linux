@@ -62,6 +62,7 @@ extern int GetJoypadInput(void);
 
 static int lcd_fb_display_px(WORD color, int x, int y)
 {
+	/*
 	unsigned char  *pen8;
 	unsigned short *pen16;
 	pen8 = (unsigned char *)(fb_mem + y*line_width + x*px_width);
@@ -69,6 +70,17 @@ static int lcd_fb_display_px(WORD color, int x, int y)
 	*pen16 = color;
 	
 	return 0;
+	*/
+	WORD *pen16;
+    unsigned char r, g, b;
+    r = ((color >> 10) & 0x1f);
+    g = ((color >> 5) & 0x3f);
+    b = (color & 0x1f);
+
+    color = r<<11|g<<6|b;
+    pen16 = (WORD *)(fb_mem + y*line_width + x*px_width);
+    *pen16 = color;
+    return 0;
 }
 
 static int lcd_fb_init()
