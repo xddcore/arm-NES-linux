@@ -14,7 +14,7 @@ typedef struct JoypadInput{
 	int (*DevExit)(void);
 	int (*GetJoypad)(void);
 	struct JoypadInput *ptNext;
-	pthread_t tTreadID;     /* ×ÓÏß³ÌID */
+	pthread_t tTreadID;     /* å­çº¿ç¨‹ID */
 }T_JoypadInput, *PT_JoypadInput;
 
 struct js_event {		
@@ -24,7 +24,7 @@ struct js_event {
 	unsigned char  number;    /* axis/button number */	
 };
 
-//È«¾Ö±äÁ¿Í¨¹ı»¥³âÌå·ÃÎÊ
+//å…¨å±€å˜é‡é€šè¿‡äº’æ–¥ä½“è®¿é—®
 static unsigned char g_InputEvent;
 
 static pthread_mutex_t g_tMutex  = PTHREAD_MUTEX_INITIALIZER;
@@ -37,17 +37,17 @@ static PT_JoypadInput g_ptJoypadInputHead;
 
 static void *InputEventTreadFunction(void *pVoid)
 {
-	/* ¶¨Òåº¯ÊıÖ¸Õë */
+	/* å®šä¹‰å‡½æ•°æŒ‡é’ˆ */
 	int (*GetJoypad)(void);
 	GetJoypad = (int (*)(void))pVoid;
 
 	while (1)
 	{
-		//ÒòÎªÓĞ×èÈûËùÒÔÃ»ÓĞÊäÈëÊ±ÊÇĞİÃß
+		//å› ä¸ºæœ‰é˜»å¡æ‰€ä»¥æ²¡æœ‰è¾“å…¥æ—¶æ˜¯ä¼‘çœ 
 		g_InputEvent = GetJoypad();
-		//ÓĞÊı¾İÊ±»½ĞÑ
+		//æœ‰æ•°æ®æ—¶å”¤é†’
 		pthread_mutex_lock(&g_tMutex);
-		/*  »½ĞÑÖ÷Ïß³Ì */
+		/*  å”¤é†’ä¸»çº¿ç¨‹ */
 		pthread_cond_signal(&g_tConVar);
 		pthread_mutex_unlock(&g_tMutex);
 	}
@@ -60,7 +60,7 @@ static int RegisterJoypadInput(PT_JoypadInput ptJoypadInput)
 	{
 		return -1;
 	}
-	//³õÊ¼»¯³É¹¦´´½¨×ÓÏß³Ì ½«×ÓÏîµÄGetInputEvent ´«½øÀ´
+	//åˆå§‹åŒ–æˆåŠŸåˆ›å»ºå­çº¿ç¨‹ å°†å­é¡¹çš„GetInputEvent ä¼ è¿›æ¥
 	pthread_create(&ptJoypadInput->tTreadID, NULL, InputEventTreadFunction, (void*)ptJoypadInput->GetJoypad);
 	if(! g_ptJoypadInputHead)
 	{
@@ -110,11 +110,11 @@ static T_JoypadInput joypadInput = {
 static int USBjoypadGet(void)
 {
 	/**
-	 * FCÊÖ±ú bit ¼üÎ»¶ÔÓ¦¹ØÏµ ÕæÊµÊÖ±úÖĞÓĞÒ»¸ö¶¨Ê±Æ÷£¬´¦Àí Á¬A  Á¬B 
+	 * FCæ‰‹æŸ„ bit é”®ä½å¯¹åº”å…³ç³» çœŸå®æ‰‹æŸ„ä¸­æœ‰ä¸€ä¸ªå®šæ—¶å™¨ï¼Œå¤„ç† è¿A  è¿B 
 	 * 0  1   2       3       4    5      6     7
 	 * A  B   Select  Start  Up   Down   Left  Right
 	 */
-	//ÒòÎª USB ÊÖ±úÃ¿´ÎÖ»ÄÜ¶Áµ½Ò»Î»¼üÖµ ËùÒÔÒªÓĞ¾²Ì¬±äÁ¿±£´æÉÏÒ»´ÎµÄÖµ
+	//å› ä¸º USB æ‰‹æŸ„æ¯æ¬¡åªèƒ½è¯»åˆ°ä¸€ä½é”®å€¼ æ‰€ä»¥è¦æœ‰é™æ€å˜é‡ä¿å­˜ä¸Šä¸€æ¬¡çš„å€¼
 	static unsigned char joypad = 0;
 	struct js_event e;
 	if(0 < read (USBjoypad_fd, &e, sizeof(e)))
@@ -122,7 +122,7 @@ static int USBjoypadGet(void)
 		if(0x2 == e.type)
 		{
 			/*
-			ÉÏ£º
+			ä¸Šï¼š
 			value:0x8001 type:0x2 number:0x5
 			value:0x0 type:0x2 number:0x5
 			*/
@@ -131,7 +131,7 @@ static int USBjoypadGet(void)
 				joypad |= 1<<4;
 			}
 			
-			/*ÏÂ£º
+			/*ä¸‹ï¼š
 			value:0x7fff type:0x2 number:0x5
 			value:0x0 type:0x2 number:0x5
 			*/
@@ -139,13 +139,13 @@ static int USBjoypadGet(void)
 			{
 				joypad |= 1<<5;
 			}
-			//ËÉ¿ª
+			//æ¾å¼€
 			if(0x0 == e.value && 0x5 == e.number)
 			{
 				joypad &= ~(1<<4 | 1<<5);
 			}
 			
-			/*×ó£º
+			/*å·¦ï¼š
 			value:0x8001 type:0x2 number:0x4
 			value:0x0 type:0x2 number:0x4
 			*/
@@ -154,7 +154,7 @@ static int USBjoypadGet(void)
 				joypad |= 1<<6;
 			}
 			
-			/*ÓÒ£º
+			/*å³ï¼š
 			value:0x7fff type:0x2 number:0x4
 			value:0x0 type:0x2 number:0x4
 			*/
@@ -162,7 +162,7 @@ static int USBjoypadGet(void)
 			{
 				joypad |= 1<<7;
 			}
-			//ËÉ¿ª
+			//æ¾å¼€
 			if(0x0 == e.value && 0x4 == e.number)
 			{
 				joypad &= ~(1<<6 | 1<<7);
@@ -171,7 +171,7 @@ static int USBjoypadGet(void)
 
 		if(0x1 == e.type)
 		{
-			/*Ñ¡Ôñ£º
+			/*é€‰æ‹©ï¼š
 			value:0x1 type:0x1 number:0xa
 			value:0x0 type:0x1 number:0xa
 			*/
@@ -184,7 +184,7 @@ static int USBjoypadGet(void)
 				joypad &= ~(1<<2);
 			}
 			
-			/*¿ªÊ¼£º
+			/*å¼€å§‹ï¼š
 			value:0x1 type:0x1 number:0xb
 			value:0x0 type:0x1 number:0xb
 			*/
@@ -287,11 +287,11 @@ int InitJoypadInput(void)
 
 int GetJoypadInput(void)
 {
-	/* ĞİÃß */
+	/* ä¼‘çœ  */
 	pthread_mutex_lock(&g_tMutex);
 	pthread_cond_wait(&g_tConVar, &g_tMutex);	
 
-	/* ±»»½ĞÑºó,·µ»ØÊı¾İ */
+	/* è¢«å”¤é†’å,è¿”å›æ•°æ® */
 	pthread_mutex_unlock(&g_tMutex);
 	return g_InputEvent;
 }
