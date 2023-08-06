@@ -2,7 +2,7 @@
  * @Author: Chengsen Dong 1034029664@qq.com
  * @Date: 2023-08-02 23:53:02
  * @LastEditors: Chengsen Dong 1034029664@qq.com
- * @LastEditTime: 2023-08-03 00:09:08
+ * @LastEditTime: 2023-08-06 18:50:20
  * @FilePath: /arm-NES-linux/README.md
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -40,9 +40,39 @@
 
 # xddcore add 2023/08/03:
 
-1.安装`alsa-utils`音频组件
+1. 安装`alsa-utils`音频组件
 ```
 apt install alsa-utils
+apt install libasound2-dev
+apt install zlib1g-dev
 ```
 
- 
+2. 编译
+```
+cd arm-NES-linux/linux
+make
+```
+
+3. 下载游戏
+```
+wget https://github.com/xddcore/arm-NES-linux/releases/download/NES_Test_Game/Super_Mario_Bros_3.nes
+```
+
+4. 运行测试游戏🎮(超级马里奥)
+```
+#注意切换为自己的超级马里奥游戏路径
+./arm-NES-linux/linux/InfoNES ./Super_Mario_Bros_3.nes
+```
+
+5. 键位映射关系表
+
+ |  Joy   |USB键盘  |
+|  ----  |---- |
+| UP | W |
+| DOWN  | S |
+| LEFT | A |
+| RIGHT  | D |
+| SELECT | 空格 |
+| START  | 回车 |
+| A | K |
+| B  | L |

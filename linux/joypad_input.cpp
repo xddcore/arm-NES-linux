@@ -4,10 +4,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <linux/input.h> //此处需要用到 input_event结构
 
 #define JOYPAD_DEV "/dev/joypad"
 #define USB_JS_DEV "/dev/input/js0"
-
+#define KEYBOARD_DEV "/dev/input/event1" //键盘事件
 
 typedef struct JoypadInput{
 	int (*DevInit)(void);
@@ -32,6 +33,7 @@ static pthread_cond_t  g_tConVar = PTHREAD_COND_INITIALIZER;
 
 static int joypad_fd;
 static int USBjoypad_fd;
+static int keyboard_fd;  
 static PT_JoypadInput g_ptJoypadInputHead;
 
 
@@ -106,13 +108,14 @@ static T_JoypadInput joypadInput = {
 	joypadDevExit,
 	joypadGet,
 };
-
+/*****************************以下为USB Joy事件判断逻辑*************************************/
 static int USBjoypadGet(void)
 {
 	/**
 	 * FC手柄 bit 键位对应关系 真实手柄中有一个定时器，处理 连A  连B 
 	 * 0  1   2       3       4    5      6     7
 	 * A  B   Select  Start  Up   Down   Left  Right
+	 * 
 	 */
 	//因为 USB 手柄每次只能读到一位键值 所以要有静态变量保存上一次的值
 	static unsigned char joypad = 0;
@@ -191,7 +194,7 @@ static int USBjoypadGet(void)
 			if(0x1 == e.value && 0xb == e.number)
 			{
 				joypad |= 1<<3;
-			}
+		}
 			if(0x0 == e.value && 0xb == e.number)
 			{
 				joypad &= ~(1<<3);
@@ -253,13 +256,138 @@ static int USBjoypadGet(void)
 	}
 	return -1;
 }
+/*****************************以下为USB 键盘事件判断逻辑*************************************/
+static int KeyBoardGet(void)
+{
+	/**
+	 * FC手柄 bit 键位对应关系 真实手柄中有一个定时器，处理 连A  连B 
+	 * 0  1   2       3       4    5      6     7
+	 * A  B   Select  Start  Up   Down   Left  Right
+	 * K  L   Space   Enter   W    S      A     D(USB键盘映射关系)
+	 */
+	  static unsigned char joypad = 0;
+    struct input_event ev; //这里使用标准的input_event结构体
+    int result = -1;
+    result = read(keyboard_fd, &ev, sizeof(struct input_event));
+    if (result != sizeof(struct input_event))
+    {
+        printf("keyboard event error %d \n", result);
+        return -1;
+    }
+    if (0x01 == ev.type) //EV_KEY            0x01
+    {
+        /*上 W */
+        if (1 == ev.value && KEY_W == ev.code)
+        {
+            joypad |= 1 << 4;
+        }
+        if (0 == ev.value && KEY_W == ev.code)
+        {
+            joypad &= ~(1 << 4);
+        }
+
+        /*下 S*/
+        if (1 == ev.value && KEY_S == ev.code)
+        {
+            joypad |= 1 << 5;
+        }
+        if (0 == ev.value && KEY_S == ev.code)
+        {
+            joypad &= ~(1 << 5);
+        }
+
+        /*左 A*/
+        if (1 == ev.value && KEY_A == ev.code)
+        {
+            joypad |= 1 << 6;
+        }
+        if (0 == ev.value && KEY_A == ev.code)
+        {
+            joypad &= ~(1 << 6);
+        }
+
+        /*右 D*/
+        if (1 == ev.value && KEY_D == ev.code)
+        {
+            joypad |= 1 << 7;
+        }
+        if (0 == ev.value && KEY_D == ev.code)
+        {
+            joypad &= ~(1 << 7);
+        }
+
+        /*选择 space*/
+        if (1 == ev.value && KEY_SPACE == ev.code)
+        {
+            joypad |= 1 << 2;
+        }
+        if (0 == ev.value && KEY_SPACE == ev.code)
+        {
+            joypad &= ~(1 << 2);
+        }
+
+        /*开始 enter*/
+        if (1 == ev.value && KEY_ENTER == ev.code)
+        {
+            joypad |= 1 << 3;
+        }
+        if (0 == ev.value && KEY_ENTER == ev.code)
+        {
+            joypad &= ~(1 << 3);
+        }
+
+        /*A->K*/
+        if (1 == ev.value && KEY_K == ev.code)
+        {
+            joypad |= 1 << 0;
+        }
+        if (0 == ev.value && KEY_K == ev.code)
+        {
+            joypad &= ~(1 << 0);
+        }
+
+        /*B->L*/
+        if (1 == ev.value && KEY_L == ev.code)
+        {
+            joypad |= 1 << 1;
+        }
+        if (0 == ev.value && KEY_L == ev.code)
+        {
+            joypad &= ~(1 << 1);
+        }
+    }
+    return joypad;
+}
+
+static int KeyBoardDevInit(void)
+{
+    keyboard_fd = open(KEYBOARD_DEV, O_RDONLY);
+    if (-1 == keyboard_fd)
+    {
+        printf("Keyboard: %s dev not found \r\n", KEYBOARD_DEV);
+        return -1;
+    }
+    return 0;
+}
+
+static int KeyBoardDevExit(void)
+{
+    close(keyboard_fd);
+    return 0;
+}
+
+static T_JoypadInput KeyBoardInput = {
+    KeyBoardDevInit,
+    KeyBoardDevExit,
+    KeyBoardGet,
+};
 
 static int USBjoypadDevInit(void)
 {
 	USBjoypad_fd = open(USB_JS_DEV, O_RDONLY);
 	if(-1 == USBjoypad_fd)
 	{
-		printf("%s dev not found \r\n", USB_JS_DEV);
+		printf("USB Joy: %s dev not found \r\n", USB_JS_DEV);
 		return -1;
 	}
 	return 0;
@@ -270,7 +398,7 @@ static int USBjoypadDevExit(void)
 	close(USBjoypad_fd);
 	return 0;
 }
-
+//USB Joy函数注册
 static T_JoypadInput usbJoypadInput = {
 	USBjoypadDevInit,
 	USBjoypadDevExit,
@@ -280,8 +408,9 @@ static T_JoypadInput usbJoypadInput = {
 int InitJoypadInput(void)
 {
 	int iErr = 0;
-	iErr = RegisterJoypadInput(&joypadInput);
-	iErr = RegisterJoypadInput(&usbJoypadInput);
+	//iErr = RegisterJoypadInput(&joypadInput);
+	//iErr = RegisterJoypadInput(&usbJoypadInput);
+	iErr = RegisterJoypadInput(&KeyBoardInput);  
 	return iErr;
 }
 
