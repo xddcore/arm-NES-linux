@@ -2,7 +2,7 @@
  * @Author: Chengsen Dong 1034029664@qq.com
  * @Date: 2023-08-02 23:53:02
  * @LastEditors: Chengsen Dong 1034029664@qq.com
- * @LastEditTime: 2023-08-06 18:50:20
+ * @LastEditTime: 2023-08-06 18:55:05
  * @FilePath: /arm-NES-linux/README.md
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -60,8 +60,14 @@ wget https://github.com/xddcore/arm-NES-linux/releases/download/NES_Test_Game/Su
 
 4. 运行测试游戏🎮(超级马里奥)
 ```
+#切换USB为HOST模式
+echo host > /sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode
+echo -e "\033[?25l" > /dev/tty1 #关闭光标
+stty -echo #关闭tty1回显，避免影响游戏
 #注意切换为自己的超级马里奥游戏路径
 ./arm-NES-linux/linux/InfoNES ./Super_Mario_Bros_3.nes
+stty -echo #开启tty1回显，继续干活
+echo -e "\033[?25h" > /dev/tty1 #开启光标
 ```
 
 5. 键位映射关系表
